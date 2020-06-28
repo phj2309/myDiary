@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html>
+	<title>W3.CSS Template</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+	<link rel="stylesheet" href="https://www.w3schools.com/lib/w3-theme-blue-grey.css">
+
+	<link rel='stylesheet' href='https://fonts.googleapis.com/css?family=Open+Sans'>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+	<!-- 제이쿼리모바일, 제이쿼리, 폰갭 라이브러리 파일(다운로드 방식)   -->
+	<link rel="stylesheet" href="jquery.mobile/jquery.mobile-1.4.5.min.css"/>
+	<script src="jquery.mobile/jquery-1.11.1.min.js"></script>
+	<script src="jquery.mobile/jquery.mobile-1.4.5.min.js"></script>
+
+	<script src="diary.js"></script>
+	<script src="profileDisplay.js"></script>
+	<script src="photoHandle.js"></script>
+	<script src="cordova.js"></script>
+
+	<script>
+		var db = null;
+		// DB 객체
+		var varDiaryName;
+		// 현재 맛집 이름
+		var recordSet = null;
+		// 현재 레코드셋
+		var varPosition = null;
+		// 현재 레코드
+		var flag;
+		// 입력/수정 페이지 식별
+
+		var count;
+
+		var password = "0000";
+		//패스워드 지정
+		var targetURL = "#main";
+		//패스워드가 맞을시 이동할 페이지
+
+		var len;
+
+		$(document).on('keyup', '#t1', function() {
+
+			var pw = $(this).val();
+			console.log(pw.length);
+			if (pw.length == 4) {
+				if (password == pw) {
+					location.href = targetURL;
+				} else {
+					getVibrate();
+				}
+			}
+			//alert(pw);
+
+		});
+
+		$(document).ready(function() {
+			initCordova();
+
+			openDB();
+			createTable();
+
+			displayProfile();
+
+			openDB1();
+			createTable1();
+			// 이벤트 함수 정의
+
+			allList();
+
+			db.transaction(function(tr) {
+				var selectSQL = 'select password from profile';
+
+				tr.executeSql(selectSQL, [], function(tr, rs) {
+					recordSet = rs;
+					if (rs.rows.item(0).password == null) {
+						password = "1234";
+					} else {
+						password = rs.rows.item(0).password;
+					}
+					len = rs.rows.item(0).password.length;
+					console.log(len);
+					console.log('저장된 패스워드 가져오기');
+				});
+			});
+
+			$('#submit1').click(function() {
+				insertProfile();
+			});
+
+			$('#button1').click(function() {
+				displayProfile();
+			});
+
+			$('#btnTakePhoto').click(function() {
+				if ($('#diaryPic1').val() == '') {
+					navigator.notification.alert('사진 이름을 먼저 입력하세요', null, '입력오류');
+				} else {
+					flag = 'enrol';
+					capturePhoto();
+				}
+			});
+
+			$('#btnTakePhoto2').click(function() {
+				if ($('#diaryPic2').val() == '') {
+					navigator.notification.alert('사진 이름을 먼저 입력하세요', null, '입력오류');
+				} else {
+					flag = 'modify';
+					capturePhoto('change');
+				}
+			});
+
+			$('#btnGetPhoto').click(function() {
+				getPhoto();
+			});
+
+			$('#btnAdd').click(function() {
+				insertDiary();
+			});
+
+			$('#btnDiaryListSearch').click(function() {
+				selectDiaryList();
+			});
+
+			$('#btnUpdate').click(function() {
+				var name = $('#diaryName3').val();
+				updateDiary(name);
+			});
+
+			$('#btnModifyCancel').click(function() {
+				$('#diaryType2').val('미정').attr('selected', 'selected');
+				$('#diaryType2').selectmenu('refresh');
+				$('#diaryRegion2').val('미정').attr('selected', 'selected');
+				$('#diaryRegion2').selectmenu('refresh');
+				$('#diaryScore2').val('0').slider('refresh');
+				form2.reset();
+			});
+
+			$('#btnAddCancel').click(function() {
+				$('#diaryType2').val('미정').attr('selected', 'selected');
+				$('#diaryType2').selectmenu('refresh');
+				$('#diaryRegion2').val('미정').attr('selected', 'selected');
+			});
+
+			$('#btnModifySearch').click(function() {
+				var name = $('#diaryName3').val();
+				selectDiaryModify(name);
+			});
+
+			$('#btnDelete').click(function() {
+				var name = $('#diaryName3').val();
+				deleteDiary(name);
+			});
+
+		});
+		$('#btnPicShow').click(function() {
+			getDiaryPic();
+		});
+
+		function getVibrate() {
+			navigator.vibrate(500);
+
+		};
+
+		function initCordova() {
+			document.addEventListener('deviceready', onDeviceReady, true);
+		}
+
+		function onDeviceReady() {
+			navigator.notification.alert('장치 준비됨', null, '코르도바 API');
+		}
+
+		// Accordion
+		function myFunction(id) {
+			var x = document.getElementById(id);
+			if (x.className.indexOf("w3-show") == -1) {
+				x.className += " w3-show";
+				x.previousElementSibling.className += " w3-theme-d1";
+			} else {
+				x.className = x.className.replace("w3-show", "");
+				x.previousElementSibling.className = x.previousElementSibling.className.replace(" w3-theme-d1", "");
+			}
+		}
+
+		// Used to toggle the menu on smaller screens when clicking on the menu button
+		function openNav() {
+			var x = document.getElementById("navDemo");
+			if (x.className.indexOf("w3-show") == -1) {
+				x.className += " w3-show";
+			} else {
+				x.className = x.className.replace(" w3-show", "");
+			}
+		}
+	</script>
+
+	<body class="w3-theme-l5">
+
+		<style>
+			#pattern {
+				padding-top: 50px;
+				padding-left: 90px;
+				background-color: #ECEBFF;
+			}
+
+			#f1 {
+				width: 70%;
+				text-align: center;
+			}
+
+			.image1 {
+				padding-top: 50px;
+				padding-left: 20px;
+				width: 220px;
+				height: 250px;
+			}
+
+		</style>
+
+		<div data-role="page" id="pattern">
+
+			<img src="diary.png" class = "image1"/>
+			<br/>
+			<br/>
+			<br/>
+			<br/>
+			<br/>
+			<br/>
+			<form name="f1" id = "f1">
+				<h3>PASSWORD</h3>
+				<br/>
+				<input type="password" name="t1" id="t1" class="w3-input" value=''/>
+			</form>
+
+		</div>
+		<div data-role="page" id="main">
+			<!-- Navbar -->
+			<div class="w3-top">
+				<div class="w3-bar w3-theme-d2 w3-left-align w3-large">
+					<a href="#profilePanel" id="button1" class="w3-bar-item w3-button w3-padding-large w3-theme-d4"><i class="fa fa-home w3-margin-right"></i>profile</a>
+					<a href="#friendsPanel" class="w3-bar-item w3-button w3-right w3-padding-large w3-hover-white w3-theme-d2" title="My Friends"><i class="fa fa-bars"></i></a>
+				</div>
+			</div>
+
+			<div class="w3-container w3-content" style="max-width:1400px;margin-top:80px" id="profileModifyPage">
+
+				<button type="button" class="w3-button w3-theme-d1 w3-margin-bottom" onclick="location.href='#diaryEnrolPage'">
+					<i class="fa fa-calendar-check-o fa-fw w3-margin-right"></i>등록
+				</button>
+
+				<button type="button" class="w3-button w3-theme-d1 w3-margin-bottom" onclick="location.href='#diaryModifySearchPage'">
+					<i class="fa fa-calendar-check-o fa-fw w3-margin-right"></i>수정
+				</button>
+
+				<div class="w3-col m12">
+					<div class="w3-card w3-round w3-white">
+						<div class="w3-container w3-padding">
+							<h2> 일기를 검색하세요! </h2>
+							<select name="search" id="search">
+								<option value="title">제목</option>
+								<option value="content">내용</option>
+								<option value="date">날짜</option>
+								<option value="weather">날씨</option>
+							</select>
+							<br/>
+							<input type="search" name="diaryType3" id="diaryType3" data-mini="true" placeholder="검색할 내용을 입력하세요!"/>
+							<br/>
+							<button type="button" class="w3-button w3-theme-d1 w3-margin-bottom" id="btnDiaryListSearch">
+								<i class="fa fa-pencil w3-margin-right"></i> 검색
+							</button>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div data-role="panel" id="profilePanel" data-display="overlay">
+				<div class="w3-card w3-round w3-white">
+					<div class="w3-container">
+						<h4 class="w3-center">My Profile</h4>
+
+						<div id="profileInfoArea">
+
+						</div>
+
+						<button type="button" class="w3-button w3-theme" onclick="location.href='#profileModify'">
+							프로필 입력
+						</button>
+					</div>
+
+				</div>
+
+			</div>
+
+			<style>
+				#rightPanel {
+					background-color: #EBF7FF;
+				}
+
+			</style>
+			<div data-role="panel" id="friendsPanel" data-display="overlay" data-position="right">
+				<div class="w3-card w3-round w3-white">
+					<div class="w3-container" id = "rightPanel">
+						<h4 class="w3-center"><img src = "dance.png" height="30px" weight = "30px"> My Birthday <img src = "pic.png" height="30px" weight = "30px"></h4>
+
+						<div>
+							<p>
+								다음 내 생일까지
+							</p>
+							<p>
+								D - 364
+							</p>
+							<br/>
+							<p>
+								내가 태어난지
+							</p>
+							<script>
+								 var first = new Date(2005, 2, 20);
+  var last = today.getTime() - first.getTime();
+  var result = Math.floor(last/(1000*60*60*24));
+    document.write("<br/>");
+  document.write("강아지에 대해 관심을 가진지는 "+result+"일째 되었습니다.");
+							</script>
+							<p>
+								D + 364
+							</p>
+						</div>
+
+					</div>
+
+				</div>
+
+			</div>
+
+			<!-- Page Container -->
+			<div class="w3-container w3-content" style="max-width:1400px;margin-top:80px" id="profileModifyPage">
+				<!-- The Grid -->
+				<div class="w3-row">
+
+					<div class="w3-col m7">
+						<div id="diaryListArea">
+
+							<!--
+							<div class="w3-container w3-card w3-white w3-round w3-margin">
+							<br>
+							<img src="/w3images/avatar2.png" alt="Avatar" class="w3-left w3-circle w3-margin-right" style="width:60px">
+							<span class="w3-right w3-opacity">1 min</span>
+							<h4>John Doe</h4>
+							<br>
+							<hr class="w3-clear">
+							<p>
+							Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+							</p>
+							<div class="w3-row-padding" style="margin:0 -16px">
+							<div class="w3-half">
+							<img src="/w3images/lights.jpg" style="width:100%" alt="Northern Lights" class="w3-margin-bottom">
+							</div>
+							<div class="w3-half">
+							<img src="/w3images/nature.jpg" style="width:100%" alt="Nature" class="w3-margin-bottom">
+							</div>
+							</div>
+							<button type="button" class="w3-button w3-theme-d1 w3-margin-bottom" onclick="location.href='diaryModify.html'" >
+							수정
+							</button>
+							<button type="button" class="w3-button w3-theme-d2 w3-margin-bottom" id="btnDelete">
+							삭제
+							</button>
+							</div>
+							-->
+
+						</div>
+
+						<!-- End Middle Column -->
+					</div>
+
+					<!-- End Grid -->
+				</div>
+
+				<!-- End Page Container -->
+			</div>
+			<br>
+
+			<!-- Footer -->
+
+		</div>
+
+		<div data-role="page" id="profileModify">
+			<div data-role="header" data-position="fixed">
+				<a href="#" data-icon="back" data-rel="back" data-direction="reverse">Back</a>
+				<h1>프로필 입력</h1>
+			</div>
+			<div class="w3-container w3-content" style="max-width:1400px;margin-top:80px" id="profileModifyPage">
+
+				<label>이름
+					<input type="text" name="name1" id="name1" class="w3-input">
+				</label>
+				<label>생년월일
+					<input type="text" name="age1" id="age1" class="w3-input" placeholder="예) 1998-06-17">
+				</label>
+				<label>주소
+					<input type="text" name="address1" id="address1" class="w3-input">
+				</label>
+				<label>전화번호
+					<input type="text" name="phone1" id="phone1" class="w3-input">
+				</label>
+				<label>비밀번호 :</label>
+				<input type="password" name="pw1" id="pw1" value=''/>
+
+				<input type="button" id="submit1" class="w3-input" value="저장"/>
+
+			</div>
+		</div>
+
+		<div data-role="page" id="diaryModifySearchPage">
+			<div data-role="header" data-position="fixed">
+				<a href="#" data-icon="back" data-rel="back" data-direction="reverse">Back</a>
+				<h1>MY Diary</h1>
+				<a href="#main" data-icon="home" data-iconpos="notext">Home</a>
+			</div>
+
+			<div data-role="content">
+				<h3>수정할 일기 검색</h3>
+
+				<input type="search" name="diaryName3" id="diaryName3" data-mini="true" placeholder="검색할 내용을 입력하세요!"/>
+				<br/>
+				<button type="button" class="w3-button w3-theme-d1 w3-margin-bottom" id="btnModifySearch">
+					<i class="fa fa-pencil w3-margin-right"></i> 검색
+				</button>
+				<form name="form2">
+					<h3>일기 수정</h3>
+					<div class="ui-body ui-body-a gap">
+						<br/>
+						<label for="diaryName2">제목  : </label>
+						<input type="text" name="diaryName2" id="diaryName2" data-mini="true"/>
+						<br/>
+
+						<label for="diaryDate2" class="select">날짜입력 :</label>
+						<input type="text" name="diaryDate2" id="diaryDate2" data-mini="true" placeholder="예) 1998-06-17"/>
+						<br/>
+
+						<label for="diaryWeather2">날씨  : </label>
+						<select name="diaryWeather2" id="diaryWeather2" data-native-menu="false" data-mini="true" data-inline="true">
+							<option value="맑음">맑음</option>
+							<option value="흐림">흐림</option>
+							<option value="눈">눈</option>
+							<option value="비">비</option>
+							<option value="기타">기타</option>
+						</select>
+						<br/>
+						<br/>
+
+						<label for="diaryMemo2">내용 : </label>
+						<textarea cols="25" rows="20" name="diaryMemo2" id="diaryMemo2" data-mini="true"></textarea>
+						<br/>
+
+						<label for="diaryPic2">사진 : </label>
+						<input type="text" name="diaryPic2" id="diaryPic2" data-mini="true" placeholder="예) 사진1 or pic1"/>
+						<!--<input type="button" class="w3-button w3-theme" id="takePhoto" value = "사진 촬영"/> -->
+						<button type="button" class="w3-button w3-theme" id="btnTakePhoto2" data-mini="true">
+							사진 촬영하기
+						</button>
+						<img id="displayArea" src=""/>
+						<br/>
+					</div>
+					<div class="ui-body">
+						<fieldset class="ui-grid-b">
+							<div class="ui-block-a">
+								<button type="reset" class="w3-button w3-theme" id="btnModifyCancel">
+									취소
+								</button>
+							</div>
+							<div class="ui-block-b">
+								<button type="button" class="w3-button w3-theme" id="btnUpdate">
+									추가
+								</button>
+							</div>
+							<div class="ui-block-c">
+								<button type="button" class="w3-button w3-theme" id="btnDelete">
+									삭제
+								</button>
+							</div>
+						</fieldset>
+					</div>
+				</form>
+			</div>
+
+		</div>
+
+		<div data-role="page" id="diaryEnrolPage">
+			<div data-role="header" data-position="fixed">
+				<a href="#" data-icon="back" data-rel="back" data-direction="reverse">Back</a>
+				<h1>My Diary</h1>
+				<a href="#main" data-icon="home" data-iconpos="notext">Home</a>
+			</div>
+
+			<div data-role="content">
+				<form name="form1">
+					<h3>일기 등록</h3>
+					<div class="ui-body ui-body-a gap">
+						<br/>
+						<label for="diaryName">제목  : </label>
+						<input type="text" name="diaryName" id="diaryName" data-mini="true"/>
+						<br/>
+
+						<label for="diaryDate" class="select">날짜입력 :</label>
+						<input type="text" name="diaryDate" id="diaryDate" data-mini="true" placeholder="예) 1998-06-17"/>
+						<br/>
+
+						<label for="diaryWeather">날씨  : </label>
+						<select name="diaryWeather" id="diaryWeather" data-native-menu="false" data-mini="true" data-inline="true">
+							<option value="맑음">맑음</option>
+							<option value="흐림">흐림</option>
+							<option value="눈">눈</option>
+							<option value="비">비</option>
+							<option value="기타">기타</option>
+						</select>
+						<br/>
+						<br/>
+
+						<label for="diaryMemo">내용 : </label>
+						<textarea cols="25" rows="20" name="diaryMemo" id="diaryMemo" data-mini="true"></textarea>
+						<br/>
+
+						<label for="diaryPic1">사진 : </label>
+						<input type="text" name="diaryPic1" id="diaryPic1" data-mini="true" placeholder="예) 사진1 or pic1"/>
+						<!--<input type="button" class="w3-button w3-theme" id="takePhoto" value = "사진 촬영"/> -->
+						<button type="button" class="w3-button w3-theme" id="btnTakePhoto" data-mini="true">
+							사진 촬영하기
+						</button>
+						<button type="button" class="w3-button w3-theme" id="btnGetPhoto">
+							사진 불러오기
+						</button>
+						<img id="displayArea" src=""/>
+						<br/>
+					</div>
+					<div class="ui-body">
+						<fieldset class="ui-grid-a">
+							<div class="ui-block-a">
+								<button type="reset" class="w3-button w3-theme" id="btnAddCancel">
+									취소
+								</button>
+							</div>
+							<div class="ui-block-b">
+								<button type="button" class="w3-button w3-theme" id="btnAdd">
+									추가
+								</button>
+							</div>
+						</fieldset>
+					</div>
+				</form>
+			</div>
+		</div>
+
+	</body>
+</html>
